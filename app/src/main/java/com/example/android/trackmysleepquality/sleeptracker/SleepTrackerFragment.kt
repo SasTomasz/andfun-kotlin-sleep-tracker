@@ -16,13 +16,16 @@
 
 package com.example.android.trackmysleepquality.sleeptracker
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProviders
 import com.example.android.trackmysleepquality.R
+import com.example.android.trackmysleepquality.database.SleepDatabase
 import com.example.android.trackmysleepquality.databinding.FragmentSleepTrackerBinding
 
 /**
@@ -44,13 +47,15 @@ class SleepTrackerFragment : Fragment() {
         val binding: FragmentSleepTrackerBinding = DataBindingUtil.inflate(
                 inflater, R.layout.fragment_sleep_tracker, container, false)
 
-        //TODO (01) Update onCreateView() to get an instance of SleepTrackerViewModel
-        //using the factory.
+        val application = requireNotNull(this.activity).application
+        val dataSource = SleepDatabase.getInstance(application).sleepDatabaseDao
+        val viewModelFactory = SleepTrackerViewModelFactory(dataSource, application)
+        val viewModel = ViewModelProviders.of(this, viewModelFactory)
+                .get(SleepTrackerViewModel::class.java)
 
-        //TODO (02) Update to set this as the lifecycle owner of the binding.
+        binding.setLifecycleOwner(this)
 
-        //TODO (04) Update to assign sleepTrackerViewModel binding variable
-        //to the sleepTrackerViewModel.
+        binding.sleepTrackerViewModel = viewModel
 
         return binding.root
     }
