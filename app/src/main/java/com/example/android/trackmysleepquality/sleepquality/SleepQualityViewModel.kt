@@ -16,7 +16,44 @@
 
 package com.example.android.trackmysleepquality.sleepquality
 
-//TODO (03) Using the code in SleepTrackerViewModel for reference, create SleepQualityViewModel
-//with coroutine setup and navigation setup.
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import com.example.android.trackmysleepquality.database.SleepDatabaseDao
+import kotlinx.coroutines.*
 
-//TODO (04) implement the onSetSleepQuality() click handler using coroutines.
+class SleepQualityViewModel(application: Application,
+                            var sleepDatabaseDao: SleepDatabaseDao,
+                            private val sleepNightKey: Long) : AndroidViewModel(application) {
+    private val viewModelJob = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
+
+    private var _navigateToSleepTracker = MutableLiveData<Boolean>()
+    val navigateToSleepTracker: LiveData<Boolean>
+        get() = _navigateToSleepTracker
+
+    fun doneNavigation() {
+        _navigateToSleepTracker.value = false
+    }
+
+    fun onSetSleepQuality(quality: Int) {
+        uiScope.launch {
+            getAndUpdate(sleepNightKey, quality)
+            _navigateToSleepTracker.value = true
+        }
+    }
+
+    private suspend fun getAndUpdate(key: Long, quality: Int) {
+        withContext(Dispatchers.IO) {
+            val tonight = sleepDatabaseDao.get(key)
+            tonight?.sleepQuality = quality
+            sleepDatabaseDao.update(tonight!!)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        viewModelJob.cancel()
+    }
+}
